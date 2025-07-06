@@ -12,29 +12,37 @@
 *
 ********************************************************************************/
 
-const express = require("express");
-const path = require("path");
-const LegoData = require("./modules/legoSets");
-
-const app = express();
-const legoData = new LegoData();
-const HTTP_PORT = process.env.PORT || 8080;
-
 // Serve static files from /public
 app.use(express.static(__dirname + "/public"));
+const express = require("express");
+const path = require("path");
+
+const LegoData = require("./modules/legoSets");
+const legoData = new LegoData();
+
+const app = express();
+const HTTP_PORT = process.env.PORT || 8080;
+
+// Serve static files from the "public" directory if needed (optional)
+app.use(express.static("public"));
 
 // ROUTES
+
+// Home page
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "home.html"));
 });
 
+// About page
 app.get("/about", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "about.html"));
 });
 
+// GET all Lego sets or by theme
 app.get("/lego/sets", async (req, res) => {
   try {
     const theme = req.query.theme;
+
     if (theme) {
       const sets = await legoData.getSetsByTheme(theme);
       res.json(sets);
@@ -43,51 +51,32 @@ app.get("/lego/sets", async (req, res) => {
       res.json(sets);
     }
   } catch (err) {
-    res.status(404).json({ error: err });
+    res.status(404).send(`Error: ${err}`);
   }
 });
 
+// GET single Lego set by set_num
 app.get("/lego/sets/:set_num", async (req, res) => {
   try {
-    const setNum = req.params.set_num;
-    const set = await legoData.getSetByNum(setNum);
+    const set = await legoData.getSetByNum(req.params.set_num);
     res.json(set);
   } catch (err) {
-    res.status(404).json({ error: err });
+    res.status(404).send(`Error: ${err}`);
   }
 });
 
-app.get("/lego/add-test", (req, res) => {
-  const testSet = {
-    set_num: "123",
-    name: "testSet name",
-    year: "2024",
-    theme_id: "366",
-    num_parts: "123",
-    img_url: "https://fakeimg.pl/375x375?text=[+Lego+]"
-  };
-
-  legoData.addSet(testSet)
-    .then(() => {
-      res.redirect("/lego/sets");
-    })
-    .catch((err) => {
-      res.status(422).send(err);
-    });
-});
-
-// 404 Route (Must be last)
+// Custom 404 route (must come last)
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, "views", "404.html"));
 });
 
-// Start server
+// Start server only after data initialization
 legoData.initialize()
   .then(() => {
     app.listen(HTTP_PORT, () => {
-      console.log(`Server is listening on port ${HTTP_PORT}`);
+      console.log(`Server is running on port ${HTTP_PORT}`);
     });
   })
   .catch((err) => {
-    console.error("Failed to start server:", err);
+    console.error(`Failed to start server: ${err}`);
   });
