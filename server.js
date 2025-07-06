@@ -11,18 +11,54 @@
 *  Published URL: https://assignment3-l1a5p5n31-zeynab786s-projects.vercel.app 
 *
 ********************************************************************************/
+
 const express = require("express");
 const path = require("path");
-
 const LegoData = require("./modules/legoSets");
-const legoData = new LegoData();
 
 const app = express();
-
+const legoData = new LegoData();
 const HTTP_PORT = process.env.PORT || 8080;
-app.use(express.static(__dirname + '/public'));
-app.get('/lego/add-test', (req, res) => {
-  let testSet = {
+
+// Serve static files from /public
+app.use(express.static(__dirname + "/public"));
+
+// ROUTES
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "home.html"));
+});
+
+app.get("/about", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "about.html"));
+});
+
+app.get("/lego/sets", async (req, res) => {
+  try {
+    const theme = req.query.theme;
+    if (theme) {
+      const sets = await legoData.getSetsByTheme(theme);
+      res.json(sets);
+    } else {
+      const sets = await legoData.getAllSets();
+      res.json(sets);
+    }
+  } catch (err) {
+    res.status(404).json({ error: err });
+  }
+});
+
+app.get("/lego/sets/:set_num", async (req, res) => {
+  try {
+    const setNum = req.params.set_num;
+    const set = await legoData.getSetByNum(setNum);
+    res.json(set);
+  } catch (err) {
+    res.status(404).json({ error: err });
+  }
+});
+
+app.get("/lego/add-test", (req, res) => {
+  const testSet = {
     set_num: "123",
     name: "testSet name",
     year: "2024",
@@ -33,20 +69,19 @@ app.get('/lego/add-test', (req, res) => {
 
   legoData.addSet(testSet)
     .then(() => {
-      res.redirect('/lego/sets');
+      res.redirect("/lego/sets");
     })
     .catch((err) => {
       res.status(422).send(err);
     });
 });
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "home.html"));
+// 404 Route (Must be last)
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, "views", "404.html"));
 });
 
-app.get("/about", (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "about.html"));
-});
+// Start server
 legoData.initialize()
   .then(() => {
     app.listen(HTTP_PORT, () => {
@@ -56,30 +91,3 @@ legoData.initialize()
   .catch((err) => {
     console.error("Failed to start server:", err);
   });
-app.get("/lego/sets", async (req, res) => {
-  try {
-    const theme = req.query.theme;
-
-    if (theme) {
-      const sets = await legoData.getSetsByTheme(theme);
-      res.json(sets); 
-    } else {
-      const sets = await legoData.getAllSets();
-      res.json(sets); 
-    }
-  } catch (err) {
-    res.status(404).json({ error: err });
-  }
-});
-app.get("/lego/sets/:set_num", async (req, res) => {
-  try {
-    const setNum = req.params.set_num;
-    const set = await legoData.getSetByNum(setNum);
-    res.json(set); 
-  } catch (err) {
-    res.status(404).json({ error: err });
-  }
-});
-app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, "views", "404.html"));
-});
