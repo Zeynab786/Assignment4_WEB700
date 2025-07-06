@@ -1,19 +1,17 @@
 /********************************************************************************
-*  WEB700 – Assignment 03
+*  WEB700 – Assignment 04
 * 
 *  I declare that this assignment is my own work in accordance with Seneca's
 *  Academic Integrity Policy:
 * 
 *  https://www.senecapolytechnic.ca/about/policies/academic-integrity-policy.html
 * 
-*  Name: Zeinab Mohamed      Student ID: 123970246      Date: 14th June 2025
+*  Name: Zeinab Mohamed      Student ID: 123970246      Date: 6th July 2025
 *
-*  Published URL: https://assignment3-l1a5p5n31-zeynab786s-projects.vercel.app 
+*  Published URL: https://your-deployed-vercel-url.vercel.app
 *
 ********************************************************************************/
 
-// Serve static files from /public
-app.use(express.static(__dirname + "/public"));
 const express = require("express");
 const path = require("path");
 
@@ -23,60 +21,67 @@ const legoData = new LegoData();
 const app = express();
 const HTTP_PORT = process.env.PORT || 8080;
 
-// Serve static files from the "public" directory if needed (optional)
-app.use(express.static("public"));
+// Serve static files from 'public' folder
+app.use(express.static(__dirname + "/public"));
 
-// ROUTES
-
-// Home page
+// Route: Home
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "home.html"));
+  res.sendFile(path.join(__dirname, "/views/home.html"));
 });
 
-// About page
+// Route: About
 app.get("/about", (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "about.html"));
+  res.sendFile(path.join(__dirname, "/views/about.html"));
 });
 
-// GET all Lego sets or by theme
-app.get("/lego/sets", async (req, res) => {
-  try {
-    const theme = req.query.theme;
-
-    if (theme) {
-      const sets = await legoData.getSetsByTheme(theme);
-      res.json(sets);
-    } else {
-      const sets = await legoData.getAllSets();
-      res.json(sets);
-    }
-  } catch (err) {
-    res.status(404).send(`Error: ${err}`);
+// Route: Get all Lego sets
+app.get("/lego/sets", (req, res) => {
+  if (req.query.name) {
+    legoData.getSetsByTheme(req.query.name)
+      .then(data => res.json(data))
+      .catch(err => res.status(404).json({ error: err }));
+  } else {
+    legoData.getAllSets()
+      .then(data => res.json(data))
+      .catch(err => res.status(404).json({ error: err }));
   }
 });
 
-// GET single Lego set by set_num
-app.get("/lego/sets/:set_num", async (req, res) => {
-  try {
-    const set = await legoData.getSetByNum(req.params.set_num);
-    res.json(set);
-  } catch (err) {
-    res.status(404).send(`Error: ${err}`);
-  }
+// Route: Get specific Lego set by number
+app.get("/lego/sets/:num", (req, res) => {
+  legoData.getSetByNum(req.params.num)
+    .then(data => res.json(data))
+    .catch(err => res.status(404).json({ error: err }));
 });
 
-// Custom 404 route (must come last)
+// Route: Add a new test Lego set
+app.get("/lego/add-test", (req, res) => {
+  const testSet = {
+    set_num: "123",
+    name: "testSet name",
+    year: "2024",
+    theme_id: "366",
+    num_parts: "123",
+    img_url: "https://fakeimg.pl/375x375?text=[+Lego+]"
+  };
+
+  legoData.addSet(testSet)
+    .then(() => res.redirect("/lego/sets"))
+    .catch(err => res.status(422).send(err));
+});
+
+// Route: 404 fallback
 app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, "views", "404.html"));
+  res.status(404).sendFile(path.join(__dirname, "/views/404.html"));
 });
 
-// Start server only after data initialization
+// Initialize and start the server
 legoData.initialize()
   .then(() => {
     app.listen(HTTP_PORT, () => {
-      console.log(`Server is running on port ${HTTP_PORT}`);
+      console.log(`Server listening on: http://localhost:${HTTP_PORT}`);
     });
   })
   .catch((err) => {
-    console.error(`Failed to start server: ${err}`);
+    console.error("Failed to initialize Lego data:", err);
   });
