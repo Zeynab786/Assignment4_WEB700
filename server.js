@@ -18,6 +18,7 @@ const LegoData = require("./modules/legoSets");
 const legoData = new LegoData();
 
 const app = express();
+
 const HTTP_PORT = process.env.PORT || 8080;
 app.use(express.static(__dirname + '/public'));
 app.get('/lego/add-test', (req, res) => {
