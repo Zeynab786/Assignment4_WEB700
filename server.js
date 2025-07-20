@@ -4,8 +4,6 @@
 *  I declare that this assignment is my own work in accordance with Seneca's
 *  Academic Integrity Policy:
 * 
-*  https://www.senecapolytechnic.ca/about/policies/academic-integrity-policy.html
-* 
 *  Name: Zeinab Mohamed      Student ID: 123970246      Date: 6th July 2025
 *
 *  Published URL: https://your-deployed-vercel-url.vercel.app
@@ -14,46 +12,37 @@
 
 const express = require("express");
 const path = require("path");
-
+const serverless = require("serverless-http");
 const LegoData = require("./modules/legoSets");
 const legoData = new LegoData();
 
 const app = express();
-const HTTP_PORT = process.env.PORT || 8080;
 
-// Middleware for static files
+// Middleware
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Middleware to parse form data
-app.use(express.urlencoded({ extended: true }));
-
-// Set up EJS templating
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 // Routes
-
-// Home page (renders EJS)
 app.get("/", (req, res) => {
   res.render("home", { page: "/" });
 });
 
-// About page (renders EJS)
 app.get("/about", (req, res) => {
   res.render("about", { page: "/about" });
 });
 
-// Show Add Set form (GET)
 app.get("/lego/addSet", async (req, res) => {
   try {
     const themes = await legoData.getAllThemes();
     res.render("addSet", { themes });
-  } catch (err) {
+  } catch {
     res.status(500).send("Error loading themes");
   }
 });
 
-// Add a new Lego set (POST)
 app.post("/lego/addSet", async (req, res) => {
   try {
     const foundTheme = await legoData.getThemeById(req.body.theme_id);
@@ -65,27 +54,33 @@ app.post("/lego/addSet", async (req, res) => {
   }
 });
 
-// List all Lego sets (renders EJS)
 app.get("/lego/sets", async (req, res) => {
   try {
     const sets = await legoData.getAllSets();
     res.render("sets", { sets });
-  } catch (err) {
+  } catch {
     res.status(500).send("Error loading Lego sets");
   }
 });
 
-// Show specific Lego set details (renders EJS)
 app.get("/lego/sets/:set_num", async (req, res) => {
   try {
     const set = await legoData.getSetByNum(req.params.set_num);
     res.render("set", { set });
-  } catch (err) {
+  } catch {
     res.status(404).render("404", { page: "" });
   }
 });
 
-// Add a test Lego set (redirects)
+app.get("/lego/deleteSet/:set_num", async (req, res) => {
+  try {
+    await legoData.deleteSetByNum(req.params.set_num);
+    res.redirect("/lego/sets");
+  } catch (err) {
+    res.status(404).send(err);
+  }
+});
+
 app.get("/lego/add-test", (req, res) => {
   const testSet = {
     set_num: "123",
@@ -101,33 +96,25 @@ app.get("/lego/add-test", (req, res) => {
     .catch(err => res.status(422).send(err));
 });
 
-// 404 fallback
 app.use((req, res) => {
   res.status(404).render("404", { page: "" });
 });
 
-// Initialize legoData and start server
-legoData.initialize()
-  .then(() => {
-    app.listen(HTTP_PORT, () => {
-      console.log(`Server listening on: http://localhost:${HTTP_PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error("Failed to initialize Lego data:", err);
-  });
-
-app.set('view engine', 'ejs');
-
-app.get("/lego/deleteSet/:set_num", async (req, res) => {
-  try {
-    await legoData.deleteSetByNum(req.params.set_num);
-    res.redirect("/lego/sets");
-  } catch (err) {
-    res.status(404).send(err);
+// Initialize data before handling requests
+let isInitialized = false;
+app.use(async (req, res, next) => {
+  if (!isInitialized) {
+    try {
+      await legoData.initialize();
+      isInitialized = true;
+      next();
+    } catch (err) {
+      res.status(500).send("Failed to initialize Lego data.");
+    }
+  } else {
+    next();
   }
 });
-app.set('views', __dirname + '/views');
-app.use(express.static(__dirname + '/public'));
-require('pg'); // explicitly require the "pg" module
-const Sequelize = require('sequelize');
+
+// 👇 Export handler for Vercel
+module.exports = serverless(app);

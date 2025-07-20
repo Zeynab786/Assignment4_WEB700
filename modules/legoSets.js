@@ -12,9 +12,9 @@
 *
 ********************************************************************************/
 
-const fs = require("fs/promises");
-const setData = require("../data/setData");
-const themeData = require("../data/themeData");
+// ✅ Load JSON statically using require() for Vercel compatibility
+const setData = require("../data/setData.json");
+const themeData = require("../data/themeData.json");
 
 class LegoData {
   constructor() {
@@ -23,44 +23,35 @@ class LegoData {
   }
 
   async initialize() {
-    const setData = JSON.parse(await fs.readFile("./data/setData.json"));
-    const themeData = JSON.parse(await fs.readFile("./data/themeData.json"));
-
+    // ✅ Remove fs.readFile – use preloaded data
     this.sets = [...setData];
     this.themes = [...themeData];
     return Promise.resolve();
   }
 
   getAllThemes() {
-    return new Promise((resolve) => resolve(this.themes));
+    return Promise.resolve(this.themes);
   }
 
   getThemeById(id) {
     return new Promise((resolve, reject) => {
       const theme = this.themes.find(t => t.id == id);
-      if (theme) resolve(theme);
-      else reject("unable to find requested theme");
+      theme ? resolve(theme) : reject("unable to find requested theme");
     });
   }
 
   getAllSets() {
     return new Promise((resolve, reject) => {
-      if (this.sets.length === 0) {
-        reject("sets not available.");
-      } else {
-        resolve(this.sets);
-      }
+      this.sets.length > 0
+        ? resolve(this.sets)
+        : reject("sets not available.");
     });
   }
 
   getSetByNum(setNum) {
     return new Promise((resolve, reject) => {
       const foundSet = this.sets.find(set => set.set_num === setNum);
-      if (foundSet) {
-        resolve(foundSet);
-      } else {
-        reject("Set not found: " + setNum);
-      }
+      foundSet ? resolve(foundSet) : reject("Set not found: " + setNum);
     });
   }
 
@@ -70,11 +61,9 @@ class LegoData {
         set.theme.toLowerCase().includes(theme.toLowerCase())
       );
 
-      if (filteredSets.length > 0) {
-        resolve(filteredSets);
-      } else {
-        reject(`No sets found with theme including: '${theme}'`);
-      }
+      filteredSets.length > 0
+        ? resolve(filteredSets)
+        : reject(`No sets found with theme including: '${theme}'`);
     });
   }
 
