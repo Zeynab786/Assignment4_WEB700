@@ -21,40 +21,71 @@ const legoData = new LegoData();
 const app = express();
 const HTTP_PORT = process.env.PORT || 8080;
 
-// Serve static files from 'public' folder
-app.use(express.static(__dirname + "/public"));
+// Middleware for static files
+app.use(express.static(path.join(__dirname, "public")));
 
-// Route: Home
+// Middleware to parse form data
+app.use(express.urlencoded({ extended: true }));
+
+// Set up EJS templating
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
+// Routes
+
+// Home page (renders EJS)
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "/views/home.html"));
+  res.render("home", { page: "/" });
 });
 
-// Route: About
+// About page (renders EJS)
 app.get("/about", (req, res) => {
-  res.sendFile(path.join(__dirname, "/views/about.html"));
+  res.render("about", { page: "/about" });
 });
 
-// Route: Get all Lego sets
-app.get("/lego/sets", (req, res) => {
-  if (req.query.name) {
-    legoData.getSetsByTheme(req.query.name)
-      .then(data => res.json(data))
-      .catch(err => res.status(404).json({ error: err }));
-  } else {
-    legoData.getAllSets()
-      .then(data => res.json(data))
-      .catch(err => res.status(404).json({ error: err }));
+// Show Add Set form (GET)
+app.get("/lego/addSet", async (req, res) => {
+  try {
+    const themes = await legoData.getAllThemes();
+    res.render("addSet", { themes });
+  } catch (err) {
+    res.status(500).send("Error loading themes");
   }
 });
 
-// Route: Get specific Lego set by number
-app.get("/lego/sets/:num", (req, res) => {
-  legoData.getSetByNum(req.params.num)
-    .then(data => res.json(data))
-    .catch(err => res.status(404).json({ error: err }));
+// Add a new Lego set (POST)
+app.post("/lego/addSet", async (req, res) => {
+  try {
+    const foundTheme = await legoData.getThemeById(req.body.theme_id);
+    req.body.theme = foundTheme.name;
+    await legoData.addSet(req.body);
+    res.redirect("/lego/sets");
+  } catch (err) {
+    res.status(500).send(err);
+  }
 });
 
-// Route: Add a new test Lego set
+// List all Lego sets (renders EJS)
+app.get("/lego/sets", async (req, res) => {
+  try {
+    const sets = await legoData.getAllSets();
+    res.render("sets", { sets });
+  } catch (err) {
+    res.status(500).send("Error loading Lego sets");
+  }
+});
+
+// Show specific Lego set details (renders EJS)
+app.get("/lego/sets/:set_num", async (req, res) => {
+  try {
+    const set = await legoData.getSetByNum(req.params.set_num);
+    res.render("set", { set });
+  } catch (err) {
+    res.status(404).render("404", { page: "" });
+  }
+});
+
+// Add a test Lego set (redirects)
 app.get("/lego/add-test", (req, res) => {
   const testSet = {
     set_num: "123",
@@ -70,12 +101,12 @@ app.get("/lego/add-test", (req, res) => {
     .catch(err => res.status(422).send(err));
 });
 
-// Route: 404 fallback
+// 404 fallback
 app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, "/views/404.html"));
+  res.status(404).render("404", { page: "" });
 });
 
-// Initialize and start the server
+// Initialize legoData and start server
 legoData.initialize()
   .then(() => {
     app.listen(HTTP_PORT, () => {
@@ -85,3 +116,14 @@ legoData.initialize()
   .catch((err) => {
     console.error("Failed to initialize Lego data:", err);
   });
+
+app.set('view engine', 'ejs');
+
+app.get("/lego/deleteSet/:set_num", async (req, res) => {
+  try {
+    await legoData.deleteSetByNum(req.params.set_num);
+    res.redirect("/lego/sets");
+  } catch (err) {
+    res.status(404).send(err);
+  }
+});

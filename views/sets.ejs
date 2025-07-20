@@ -1,0 +1,17 @@
+<%- include('partials/navbar', { page: '/lego/sets' }) %>
+
+<h1>Collection</h1>
+<table>
+  <% sets.forEach(set => { %>
+    <tr>
+      <td>
+        <div class="rounded" style="width: 8rem; height: 8rem; background-image: url('<%= set.img_url %>'); background-size: cover;"></div>
+      </td>
+      <td><%= set.name %></td>
+      <td><a href="/lego/sets?theme=<%= set.theme %>" class="btn btn-info"><%= set.theme %></a></td>
+      <td><%= set.year %></td>
+      <td><%= set.num_parts %></td>
+      <td><a href="/lego/sets/<%= set.set_num %>" class="btn btn-primary">Details</a></td>
+    </tr>
+  <% }) %>
+</table>
