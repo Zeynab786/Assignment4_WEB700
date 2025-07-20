@@ -13,6 +13,8 @@
 ********************************************************************************/
 
 const fs = require("fs/promises");
+const setData = require("../data/setData");
+const themeData = require("../data/themeData");
 
 class LegoData {
   constructor() {
