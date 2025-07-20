@@ -127,3 +127,7 @@ app.get("/lego/deleteSet/:set_num", async (req, res) => {
     res.status(404).send(err);
   }
 });
+app.set('views', __dirname + '/views');
+app.use(express.static(__dirname + '/public'));
+require('pg'); // explicitly require the "pg" module
+const Sequelize = require('sequelize');
