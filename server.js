@@ -121,7 +121,6 @@ app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/public'));
 require('pg'); // explicitly require the "pg" module
-const Sequelize = require('sequelize');
 
 app.get("/lego/deleteSet/:set_num", async (req, res) => {
   try {
