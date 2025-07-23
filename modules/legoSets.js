@@ -12,34 +12,32 @@
 *
 ********************************************************************************/
 
-const setData = require("../data/setData");
-const themeData = require("../data/themeData");
+const fs = require("fs/promises");
 
 class LegoData {
   constructor() {
     this.sets = [];
+    this.themes = [];
   }
 
-  initialize() {
+  async initialize() {
+    const setData = JSON.parse(await fs.readFile("./data/setData.json"));
+    const themeData = JSON.parse(await fs.readFile("./data/themeData.json"));
+
+    this.sets = [...setData];
+    this.themes = [...themeData];
+    return Promise.resolve();
+  }
+
+  getAllThemes() {
+    return new Promise((resolve) => resolve(this.themes));
+  }
+
+  getThemeById(id) {
     return new Promise((resolve, reject) => {
-      try {
-        this.sets = [];
-
-        setData.forEach((set) => {
-          const foundtheme = themeData.find((theme) => theme.id === set.theme_id);
-
-          const setWithTheme = {
-            ...set,
-            theme: foundtheme ? foundtheme.name : "Unknown"
-          };
-
-          this.sets.push(setWithTheme);
-        });
-
-        resolve();
-      } catch (err) {
-        reject("Failed to initialize data: " + err);
-      }
+      const theme = this.themes.find(t => t.id == id);
+      if (theme) resolve(theme);
+      else reject("unable to find requested theme");
     });
   }
 
@@ -55,8 +53,7 @@ class LegoData {
 
   getSetByNum(setNum) {
     return new Promise((resolve, reject) => {
-      const foundSet = this.sets.find((set) => set.set_num === setNum);
-
+      const foundSet = this.sets.find(set => set.set_num === setNum);
       if (foundSet) {
         resolve(foundSet);
       } else {
@@ -67,7 +64,7 @@ class LegoData {
 
   getSetsByTheme(theme) {
     return new Promise((resolve, reject) => {
-      const filteredSets = this.sets.filter((set) =>
+      const filteredSets = this.sets.filter(set =>
         set.theme.toLowerCase().includes(theme.toLowerCase())
       );
 
@@ -79,7 +76,6 @@ class LegoData {
     });
   }
 
-  // New addSet method per assignment 4
   addSet(newSet) {
     return new Promise((resolve, reject) => {
       const exists = this.sets.find(set => set.set_num === newSet.set_num);
@@ -88,6 +84,18 @@ class LegoData {
       } else {
         this.sets.push(newSet);
         resolve();
+      }
+    });
+  }
+
+  deleteSetByNum(setNum) {
+    return new Promise((resolve, reject) => {
+      const index = this.sets.findIndex(s => s.set_num === setNum);
+      if (index !== -1) {
+        this.sets.splice(index, 1);
+        resolve();
+      } else {
+        reject("Set not found");
       }
     });
   }

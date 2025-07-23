@@ -1,0 +1,16 @@
+<%- include('partials/navbar', {page: '/lego/addSet'}) %>
+
+<h1>Add New Lego Set</h1>
+<form action="/lego/addSet" method="POST">
+    <input name="name" type="text" placeholder="Set Name" required />
+    <input name="year" type="number" placeholder="Year" required />
+    <input name="num_parts" type="number" placeholder="Number of Parts" required />
+    <input name="img_url" type="url" placeholder="Image URL" required />
+    <select name="theme_id" required>
+        <% themes.forEach(theme => { %>
+            <option value="<%= theme.id %>"><%= theme.name %></option>
+        <% }) %>
+    </select>
+    <input name="set_num" type="text" placeholder="Set Number" required />
+    <button type="submit">Add Set</button>
+</form>

@@ -1,0 +1,13 @@
+<%- include('partials/navbar', { page: '' }) %>
+
+<h1><%= set.name %></h1>
+<p>Below, you will find detailed information about the set: <%= set.name %></p>
+<img src="<%= set.img_url %>" width="200">
+<ul>
+  <li>Year: <%= set.year %></li>
+  <li>Theme: <%= set.theme %></li>
+  <li>Parts: <%= set.num_parts %></li>
+</ul>
+<a href="/lego/deleteSet/<%= set.set_num %>" class="btn btn-sm btn-danger">Delete</a>
+
+<a href="#" onclick="history.back(); return false;">Back</a>
