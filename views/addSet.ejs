@@ -1,16 +1,83 @@
-<%- include('partials/navbar', {page: '/lego/addSet'}) %>
+<!DOCTYPE html>
+<html>
 
-<h1>Add New Lego Set</h1>
-<form action="/lego/addSet" method="POST">
-    <input name="name" type="text" placeholder="Set Name" required />
-    <input name="year" type="number" placeholder="Year" required />
-    <input name="num_parts" type="number" placeholder="Number of Parts" required />
-    <input name="img_url" type="url" placeholder="Image URL" required />
-    <select name="theme_id" required>
-        <% themes.forEach(theme => { %>
-            <option value="<%= theme.id %>"><%= theme.name %></option>
-        <% }) %>
-    </select>
-    <input name="set_num" type="text" placeholder="Set Number" required />
-    <button type="submit">Add Set</button>
-</form>
+<head>
+  <title>Add Set</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+  <!-- Custom Theme CSS -->
+  <link rel="stylesheet" href="/css/theme.css">
+</head>
+
+<body>
+  <%- include('partials/navbar', { page: 'add' }) %>
+
+  <br />
+
+  <div class="container">
+    <div class="row">
+      <main class="col-md-12">
+
+        <section class="bg-light text-center py-5">
+          <div class="container">
+            <h1 class="display-5 fw-bold">Add Set</h1>
+            <p class="lead text-muted">Use the form below to add a new Lego set to the collection.</p>
+
+            <form action="/lego/addSet" method="POST">
+              <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="year" class="form-label">Year</label>
+                <input type="number" class="form-control" id="year" name="year" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="num_parts" class="form-label">Number of Parts</label>
+                <input type="number" class="form-control" id="num_parts" name="num_parts" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="img_url" class="form-label">Image URL</label>
+                <input type="url" class="form-control" id="img_url" name="img_url" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="theme_id" class="form-label">Theme</label>
+                <select class="form-select" id="theme_id" name="theme_id" required>
+                  <option value="">Select a theme</option>
+                  <% themes.forEach(theme => { %>
+                    <option value="<%= theme.id %>"><%= theme.name %></option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="set_num" class="form-label">Set Number</label>
+                <input type="text" class="form-control" id="set_num" name="set_num" required>
+              </div>
+
+              <button type="submit" class="btn btn-primary">Add Set</button>
+            </form>
+
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+
+</body>
+
+</html>

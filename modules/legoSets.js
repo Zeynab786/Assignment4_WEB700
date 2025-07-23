@@ -12,32 +12,38 @@
 *
 ********************************************************************************/
 
-const fs = require("fs/promises");
+const setData = require("../data/setData");
+const themeData = require("../data/themeData");
 
 class LegoData {
   constructor() {
     this.sets = [];
-    this.themes = [];
+    this.themes = [];   // <-- Added: new property to store themes
   }
 
-  async initialize() {
-    const setData = JSON.parse(await fs.readFile("./data/setData.json"));
-    const themeData = JSON.parse(await fs.readFile("./data/themeData.json"));
-
-    this.sets = [...setData];
-    this.themes = [...themeData];
-    return Promise.resolve();
-  }
-
-  getAllThemes() {
-    return new Promise((resolve) => resolve(this.themes));
-  }
-
-  getThemeById(id) {
+  initialize() {
     return new Promise((resolve, reject) => {
-      const theme = this.themes.find(t => t.id == id);
-      if (theme) resolve(theme);
-      else reject("unable to find requested theme");
+      try {
+        this.sets = [];
+
+        // Initialize sets with theme names (existing code)
+        setData.forEach((set) => {
+          const foundtheme = themeData.find((theme) => theme.id === set.theme_id);
+
+          const setWithTheme = {
+            ...set,
+            theme: foundtheme ? foundtheme.name : "Unknown"
+          };
+
+          this.sets.push(setWithTheme);
+        });
+
+        this.themes = [...themeData];  // <-- Added: load all themes from themeData
+
+        resolve();
+      } catch (err) {
+        reject("Failed to initialize data: " + err);
+      }
     });
   }
 
@@ -53,7 +59,8 @@ class LegoData {
 
   getSetByNum(setNum) {
     return new Promise((resolve, reject) => {
-      const foundSet = this.sets.find(set => set.set_num === setNum);
+      const foundSet = this.sets.find((set) => set.set_num === setNum);
+
       if (foundSet) {
         resolve(foundSet);
       } else {
@@ -64,7 +71,7 @@ class LegoData {
 
   getSetsByTheme(theme) {
     return new Promise((resolve, reject) => {
-      const filteredSets = this.sets.filter(set =>
+      const filteredSets = this.sets.filter((set) =>
         set.theme.toLowerCase().includes(theme.toLowerCase())
       );
 
@@ -78,19 +85,52 @@ class LegoData {
 
   addSet(newSet) {
     return new Promise((resolve, reject) => {
-      const exists = this.sets.find(set => set.set_num === newSet.set_num);
+      // Check if set_num already exists in this.sets
+      const exists = this.sets.some((set) => set.set_num === newSet.set_num);
       if (exists) {
         reject("Set already exists");
       } else {
-        this.sets.push(newSet);
+        // If theme_id provided, try to add theme name property
+        const foundTheme = themeData.find((theme) => theme.id === newSet.theme_id);
+        const setWithTheme = {
+          ...newSet,
+          theme: foundTheme ? foundTheme.name : "Unknown"
+        };
+
+        this.sets.push(setWithTheme);
         resolve();
       }
     });
   }
 
+  // <-- Added new method: getAllThemes()
+  getAllThemes() {
+    return new Promise((resolve, reject) => {
+      if (this.themes.length === 0) {
+        reject("Themes not available.");
+      } else {
+        resolve(this.themes);
+      }
+    });
+  }
+
+  // <-- Added new method: getThemeById(id)
+  getThemeById(id) {
+    return new Promise((resolve, reject) => {
+      const foundTheme = this.themes.find((theme) => theme.id === id);
+
+      if (foundTheme) {
+        resolve(foundTheme);
+      } else {
+        reject("unable to find requested theme");
+      }
+    });
+  }
+
+  // <-- Added new method: deleteSetByNum(setNum)
   deleteSetByNum(setNum) {
     return new Promise((resolve, reject) => {
-      const index = this.sets.findIndex(s => s.set_num === setNum);
+      const index = this.sets.findIndex(set => set.set_num === setNum);
       if (index !== -1) {
         this.sets.splice(index, 1);
         resolve();
